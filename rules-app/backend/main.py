@@ -46,7 +46,8 @@ def read_rules() -> str:
 
 
 def sort_section(lines: list[str]) -> list[str]:
-    """Re-order bullet lines within ## 禁用語句 by length asc, then Unicode for ties."""
+    """Re-order bullet lines within ## 禁用語句 by length asc, then Unicode for ties.
+    Reconstructs the section cleanly: heading + blank line + sorted bullets + blank line."""
     result = []
     in_section = False
     bullet_buf = []
@@ -58,19 +59,23 @@ def sort_section(lines: list[str]) -> list[str]:
             continue
         if in_section:
             if line.startswith("## "):
-                # flush sorted bullets before the next section
+                # flush sorted bullets, then continue to next section
+                result.append("")
                 bullet_buf.sort(key=lambda l: (len(l), l))
                 result.extend(bullet_buf)
                 bullet_buf = []
                 in_section = False
+                result.append("")
                 result.append(line)
                 continue
             if line.startswith("- "):
                 bullet_buf.append(line)
-                continue
+            # skip blank lines and any non-bullet content within the section
+            continue
         result.append(line)
 
     if bullet_buf:
+        result.append("")
         bullet_buf.sort(key=lambda l: (len(l), l))
         result.extend(bullet_buf)
 
@@ -123,11 +128,16 @@ def add_rule(body: RuleBody):
             if line.startswith("## "):
                 insert_at = i
                 break
-    new_line = f"- {body.rule.strip()}"
+    new_lines_to_add = [
+        f"- {entry.strip()}"
+        for entry in body.rule.splitlines()
+        if entry.strip()
+    ]
     if insert_at is not None:
-        lines.insert(insert_at, new_line)
+        for i, new_line in enumerate(new_lines_to_add):
+            lines.insert(insert_at + i, new_line)
     else:
-        lines.append(new_line)
+        lines.extend(new_lines_to_add)
     after = "\n".join(sort_section(lines)) + "\n"
     RULES_PATH.write_text(after, encoding="utf-8")
     return {"before": before, "after": after}
