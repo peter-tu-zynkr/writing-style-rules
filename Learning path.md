@@ -41,7 +41,7 @@
 
 ## (4) Learn Cursor
 - [ ] Download
-- [ ] Connect to Claude
+- [x] Connect to Claude
 - [ ] Connect to Codex
 - [ ] Connect with GitHub
 - [ ] Open folder & files
