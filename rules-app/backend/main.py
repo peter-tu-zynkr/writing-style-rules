@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,14 +6,18 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+_origins_env = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173")
+ALLOWED_ORIGINS = [o.strip() for o in _origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-RULES_PATH = Path(__file__).parent.parent.parent / "rules.md"
+_rules_env = os.environ.get("RULES_FILE", "")
+RULES_PATH = Path(_rules_env) if _rules_env else Path(__file__).parent.parent.parent / "rules.md"
 
 
 class RuleBody(BaseModel):
@@ -24,7 +29,19 @@ def normalize(text: str) -> str:
     return text.replace("…", "...").replace("\u2026", "...")
 
 
+_DEFAULT_RULES = """\
+# 寫作規則 — 禁用詞彙與語句
+
+這些是應避免使用的詞彙與語句，因為它們聽起來過於 AI 腔調或陳腔濫調。
+
+## 禁用語句
+
+"""
+
 def read_rules() -> str:
+    if not RULES_PATH.exists():
+        RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        RULES_PATH.write_text(_DEFAULT_RULES, encoding="utf-8")
     return RULES_PATH.read_text(encoding="utf-8")
 
 
