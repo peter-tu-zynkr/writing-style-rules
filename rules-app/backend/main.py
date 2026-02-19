@@ -19,8 +19,45 @@ class RuleBody(BaseModel):
     rule: str
 
 
+def normalize(text: str) -> str:
+    """Normalize ellipsis variants so … and ... match each other."""
+    return text.replace("…", "...").replace("\u2026", "...")
+
+
 def read_rules() -> str:
     return RULES_PATH.read_text(encoding="utf-8")
+
+
+def sort_section(lines: list[str]) -> list[str]:
+    """Re-order bullet lines within ## 禁用語句 by length asc, then Unicode for ties."""
+    result = []
+    in_section = False
+    bullet_buf = []
+
+    for line in lines:
+        if line.strip() == "## 禁用語句":
+            in_section = True
+            result.append(line)
+            continue
+        if in_section:
+            if line.startswith("## "):
+                # flush sorted bullets before the next section
+                bullet_buf.sort(key=lambda l: (len(l), l))
+                result.extend(bullet_buf)
+                bullet_buf = []
+                in_section = False
+                result.append(line)
+                continue
+            if line.startswith("- "):
+                bullet_buf.append(line)
+                continue
+        result.append(line)
+
+    if bullet_buf:
+        bullet_buf.sort(key=lambda l: (len(l), l))
+        result.extend(bullet_buf)
+
+    return result
 
 
 def extract_bullets(content: str) -> list[str]:
@@ -47,9 +84,10 @@ def get_rules():
 def check_rule(body: RuleBody):
     content = read_rules()
     bullets = extract_bullets(content)
-    rule_lower = body.rule.strip().lower()
+    rule_lower = normalize(body.rule.strip().lower())
     for bullet in bullets:
-        if rule_lower in bullet.lower() or bullet.lower() in rule_lower:
+        bullet_lower = normalize(bullet.lower())
+        if rule_lower in bullet_lower or bullet_lower in rule_lower:
             return {"status": "exists", "message": "This rule already exists."}
     return {"status": "new", "proposal": f"- {body.rule.strip()}"}
 
@@ -73,7 +111,7 @@ def add_rule(body: RuleBody):
         lines.insert(insert_at, new_line)
     else:
         lines.append(new_line)
-    after = "\n".join(lines) + "\n"
+    after = "\n".join(sort_section(lines)) + "\n"
     RULES_PATH.write_text(after, encoding="utf-8")
     return {"before": before, "after": after}
 
@@ -81,17 +119,17 @@ def add_rule(body: RuleBody):
 @app.post("/api/remove")
 def remove_rule(body: RuleBody):
     before = read_rules()
-    rule_lower = body.rule.strip().lower()
+    rule_lower = normalize(body.rule.strip().lower())
     lines = before.splitlines()
     new_lines = []
     removed = False
     for line in lines:
-        if not removed and line.startswith("- ") and rule_lower in line[2:].strip().lower():
+        if not removed and line.startswith("- ") and rule_lower in normalize(line[2:].strip().lower()):
             removed = True
             continue
         new_lines.append(line)
     if not removed:
         return {"status": "not_found", "message": "找不到此規則。"}
-    after = "\n".join(new_lines) + "\n"
+    after = "\n".join(sort_section(new_lines)) + "\n"
     RULES_PATH.write_text(after, encoding="utf-8")
     return {"before": before, "after": after}
