@@ -45,10 +45,15 @@ export default function App() {
 
   const handleDirectAdd = async () => {
     const res = await axios.post("/api/add", { rule: inputValue });
-    setDiff(res.data);
-    setResponse(null);
-    setInputValue("");
-    fetchRules();
+    if (res.data.status === "exists") {
+      setResponse(res.data);
+      setDiff(null);
+    } else {
+      setDiff(res.data);
+      setResponse(null);
+      setInputValue("");
+      fetchRules();
+    }
   };
 
   const handleRemove = async () => {
@@ -79,6 +84,11 @@ export default function App() {
           />
           {activeTab === "check" && (
             <ResponsePanel response={response} onAdd={handleAdd} />
+          )}
+          {activeTab === "add" && response?.status === "exists" && (
+            <div style={styles.errorPanel}>
+              <p style={styles.errorText}>⚠️ {response.message}</p>
+            </div>
           )}
           {activeTab === "remove" && response?.status === "not_found" && (
             <div style={styles.errorPanel}>

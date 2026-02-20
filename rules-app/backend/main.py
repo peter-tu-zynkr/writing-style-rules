@@ -117,6 +117,15 @@ def check_rule(body: RuleBody):
 @app.post("/api/add")
 def add_rule(body: RuleBody):
     before = read_rules()
+    bullets = extract_bullets(before)
+    for entry in body.rule.splitlines():
+        entry_lower = normalize(entry.strip().lower())
+        if not entry_lower:
+            continue
+        for bullet in bullets:
+            bullet_lower = normalize(bullet.lower())
+            if entry_lower in bullet_lower or bullet_lower in entry_lower:
+                return {"status": "exists", "message": f"「{entry.strip()}」已存在。"}
     lines = before.splitlines()
     insert_at = None
     in_section = False
