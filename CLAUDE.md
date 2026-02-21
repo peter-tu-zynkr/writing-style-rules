@@ -1,29 +1,28 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Repository Overview
 
-This is a business strategy document repository for **Zynkr**, an AI consulting and enablement company. The repository currently contains one file:
+This is a **writing style rules** repository. It stores and manages a list of forbidden
+words and phrases to avoid in Chinese writing (AI-sounding or clichéd expressions).
 
-- `zynkr_business_strategy.md` — The master business strategy document covering vision, brand, business model, operations, consultancy methodology, action plan, org structure, and team culture.
+## Files
 
-## Document Structure
+- `rules.md` — The source-of-truth list of forbidden phrases (禁用語句)
+- `rules-app/` — A full-stack web app (FastAPI backend + React/Vite frontend) for
+  managing `rules.md` via a UI (check, add, remove rules)
 
-The strategy document is organized into these major sections:
+## Running the App
 
-- **Vision & Mission** — Empower professionals to compete in the AI era
-- **Brand** — "Synchronization & thinking"; closes Knowledge, Cognitive, and Execution gaps
-- **Strategy Blueprint** — Four horizons: Individual Courses → Systemization → Enterprise → Agentization/Platform
-- **Business Model** — B2C (low and high tier) + B2B enterprise + Agent Marketplace
-- **Operations** — Seven pillars: Brand & Marketing, Consultant & Sales, Operations, Learning, Dev Ops, Product & Tech, People & Talent
-- **Consultancy Methodology** — Three phases: Discovery & Diagnosis → AI Prototyping → Change Management
-- **Action Plan** — Four phases (0–3) with milestones in NT$ revenue targets
-- **Organization** — Functional team structure across six departments
+**Backend** (from `rules-app/backend/`):
+```
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-## Key Context
+**Frontend** (from `rules-app/frontend/`):
+```
+npm install
+npm run dev
+```
 
-- Target markets: Taiwan (revenue targets in NT$) with global aspirations
-- Core differentiator: Human-centered AI adoption, not hype or standalone tech
-- Business trajectory: B2C courses → B2B consulting → AI Agent Marketplace platform
-- The "flywheel": More Users → More Data → Stronger Agents → More Experts → Richer Ecosystem → More Users
+The backend reads/writes directly to `rules.md` at the repo root.
